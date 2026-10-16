@@ -99,7 +99,8 @@ tracked.
   table (model, endpoint, tokens, tool calls, retries, completeness checks, deterministic settings).
 
 ## Pipeline
-[Fig1.pdf](https://github.com/user-attachments/files/33565207/Fig1.pdf)
+![Uploading Fig1.jpg…]()
+
 
 1. **Literature agent** — PubMed search for metabolites > 1 mM in the tissue, with species,
    subject count and setting per citation; concentrations grounded in HMDB/BioNumbers indexes.
