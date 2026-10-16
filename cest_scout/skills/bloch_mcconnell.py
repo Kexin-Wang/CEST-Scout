@@ -1,7 +1,7 @@
 """General N-pool Bloch-McConnell simulation engine.
 
-Vendored unchanged from https://github.com/Kexin-Wang/CEST_simulator (bloch_mcconnell.py,
-commit 16ab4d3, 2026-09-14, MIT License) so that CEST_Scout runs without the sibling repository.
+Vendored unchanged from the author's CEST_simulator project (bloch_mcconnell.py, commit 16ab4d3,
+2026-09-14); the MATLAB original is https://github.com/Kexin-Wang/BMsim.
 
 This is a Python port of a MATLAB engine (``blochSolve`` / ``blochSimCurve``,
 H. Zeng) for CEST/MT saturation-transfer simulation. It supports an

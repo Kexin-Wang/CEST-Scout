@@ -11,19 +11,48 @@ from a cited reference table or a sweep, never from hallucination. If there are 
 git clone https://github.com/Kexin-Wang/CEST-Scout.git && cd CEST-Scout
 python -m venv .venv && source .venv/bin/activate      # Python 3.11
 pip install -r requirements.txt
-cp .env.example .env                                   # then edit: endpoint, model names, NCBI_EMAIL
+cp .env.example .env                                   # then edit: LLM_PRESET, OPENAI_BASE_URL, NCBI_EMAIL
 python -m cest_scout.cli "liver"                       # -> outputs/liver_<model>_<timestamp>.{json,md,html}
 python -m pytest -q                                    # ~4 min; one live PubMed smoke test, skipped offline
 ```
 
-The agents talk to any OpenAI-compatible chat endpoint that supports tool calling: set
-`OPENAI_BASE_URL`, `OPENAI_API_KEY` and the four `OPENAI_MODEL_*` names in `.env`. The results in
-`outputs/` were made with open-weight models (DeepSeek-V4-Flash, Qwen3.8-27B, Qwen3.6-35B-A3B)
-served locally with vLLM, thinking disabled (`LLM_DISABLE_THINKING=true`); the serving and batch
-scripts in `hpc/` are written for one SLURM cluster and need their paths and module names
-adapted. PubMed and PubChem are queried live, so a run needs network access and an `NCBI_EMAIL`
-(an `NCBI_API_KEY` raises the rate limit). The Bloch-McConnell engine is vendored at
-`cest_scout/skills/bloch_mcconnell.py` (from [BMsim]([https://github.com/Kexin-Wang/CEST_simulator](https://github.com/Kexin-Wang/BMsim))).
+PubMed and PubChem are queried live, so a run needs network access and an `NCBI_EMAIL` (an
+`NCBI_API_KEY` raises the rate limit). The Bloch-McConnell engine is vendored at
+`cest_scout/skills/bloch_mcconnell.py` (from [BMsim](https://github.com/Kexin-Wang/BMsim)).
+
+## Models
+
+The agents talk to any OpenAI-compatible chat endpoint with tool calling. `LLM_PRESET` in `.env`
+selects one of the three open-weight models the results in `outputs/` were made with, served by
+[vLLM](https://docs.vllm.ai) (0.29) on your own GPUs, or OpenAI's API:
+
+| `LLM_PRESET` | Checkpoint | GPUs used here | vLLM tool / reasoning parser |
+|---|---|---|---|
+| `deepseek-v4-flash` | `deepseek-ai/DeepSeek-V4-Flash` | 4x H100 80 GB (TP 4) or 2x H200 (TP 2); Hopper only | `deepseek_v4` / `deepseek_v4` |
+| `qwen3.8-27b` | `Qwen/Qwen3.8-27B-FP8` | 1x H100 80 GB | `qwen3_coder` / `qwen3` |
+| `qwen3.6-35b-a3b` | `Qwen/Qwen3.6-35B-A3B-FP8` | 1x H100 80 GB | `qwen3_coder` / `qwen3` |
+| `openai` (default) | `gpt-5.5` via api.openai.com | none | - |
+
+A local preset sets all four agents to that model and turns thinking off; `OPENAI_BASE_URL` must
+point at the server, and `OPENAI_API_KEY` is its `--api-key` (any non-empty string if none). An
+explicit `OPENAI_MODEL_LITERATURE` / `_CHEMIST` / `_PHYSICIST` / `_EXPERIMENTALIST` overrides the
+preset for that agent. Serving each model as it was served for the results:
+
+```bash
+vllm serve Qwen/Qwen3.8-27B-FP8 --served-model-name qwen3.8-27b --max-model-len 131072 \
+  --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --language-model-only
+vllm serve Qwen/Qwen3.6-35B-A3B-FP8 --served-model-name qwen3.6-35b-a3b --max-model-len 131072 \
+  --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --language-model-only
+vllm serve deepseek-ai/DeepSeek-V4-Flash --served-model-name deepseek-v4-flash --tensor-parallel-size 4 \
+  --max-model-len 131072 --enable-auto-tool-choice --tool-call-parser deepseek_v4 --reasoning-parser deepseek_v4 \
+  --trust-remote-code --kv-cache-dtype fp8_ds_mla
+```
+
+DeepSeek-V4-Flash needs Hopper GPUs (its DeepGEMM kernels fail on Ada/L40S) and the
+`fp8_ds_mla` KV cache. On shared nodes, `NCCL_RAS_ENABLE=0` avoids an NCCL start-up failure when
+another job holds NCCL's port. `hpc/` holds the SLURM scripts that served these models and ran
+the batch rounds (`hpc/README.md`); they are written for one cluster and need their paths and
+module names adapted.
 
 A run takes 10-25 min per tissue (one GPU-served model), most of it in the agents' PubMed searches
 and the clinical-evidence stage; the deterministic sweeps take a few minutes with

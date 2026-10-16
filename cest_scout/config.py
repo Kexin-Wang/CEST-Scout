@@ -33,6 +33,12 @@ CONTRAST_THRESHOLD_PERCENT = 0.5
 # Bloch-McConnell simulation.
 GYRO_1H_MHZ_PER_T = 267.5154109126 / (2 * _pi)
 
+# The three open-weight models CEST_Scout was evaluated with, by the names hpc/presets serve them
+# under. LLM_PRESET=<one of these> sets all four agent model names and switches thinking off
+# (vLLM's Qwen3 and DeepSeek-V4 templates both honour enable_thinking=False); explicit
+# OPENAI_MODEL_* / LLM_DISABLE_THINKING still win. LLM_PRESET=openai (the default) keeps gpt-5.5.
+LOCAL_MODEL_PRESETS = ("deepseek-v4-flash", "qwen3.8-27b", "qwen3.6-35b-a3b")
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -75,19 +81,27 @@ def load_settings() -> Settings:
             "NCBI_EMAIL is not set. NCBI requires a contact email for "
             f"E-utilities requests; put it in {PROJECT_ROOT / '.env'}."
         )
+    preset = os.environ.get("LLM_PRESET", "").strip().lower() or "openai"
+    if preset != "openai" and preset not in LOCAL_MODEL_PRESETS:
+        raise RuntimeError(f"LLM_PRESET={preset!r} is not one of: openai, {', '.join(LOCAL_MODEL_PRESETS)}.")
+    if preset != "openai" and not os.environ.get("OPENAI_BASE_URL"):
+        raise RuntimeError(f"LLM_PRESET={preset} needs OPENAI_BASE_URL, the vLLM server serving it "
+                           "(e.g. http://localhost:8000/v1).")
+    default_model = "gpt-5.5" if preset == "openai" else preset
     return Settings(
         openai_api_key=api_key,
         openai_base_url=os.environ.get("OPENAI_BASE_URL") or None,
-        model_literature=os.environ.get("OPENAI_MODEL_LITERATURE", "gpt-5.5"),
-        model_chemist=os.environ.get("OPENAI_MODEL_CHEMIST", "gpt-5.5"),
-        model_physicist=os.environ.get("OPENAI_MODEL_PHYSICIST", "gpt-5.5"),
-        model_experimentalist=os.environ.get("OPENAI_MODEL_EXPERIMENTALIST", "gpt-5.5"),
+        model_literature=os.environ.get("OPENAI_MODEL_LITERATURE", default_model),
+        model_chemist=os.environ.get("OPENAI_MODEL_CHEMIST", default_model),
+        model_physicist=os.environ.get("OPENAI_MODEL_PHYSICIST", default_model),
+        model_experimentalist=os.environ.get("OPENAI_MODEL_EXPERIMENTALIST", default_model),
         ncbi_email=ncbi_email,
         ncbi_api_key=os.environ.get("NCBI_API_KEY") or None,
         # Qwen3's thinking mode interleaves <think>...</think> reasoning into the same
         # content field used for tool-call XML and the final JSON extraction, which can
-        # break both. Set for local Qwen3 endpoints; leave unset for OpenAI.
-        disable_thinking=os.environ.get("LLM_DISABLE_THINKING", "").strip().lower() in ("1", "true", "yes"),
+        # break both. On by default for the local presets; leave unset for OpenAI.
+        disable_thinking=os.environ.get("LLM_DISABLE_THINKING", "" if preset == "openai" else "true").strip().lower()
+        in ("1", "true", "yes"),
         physicist_api_key=os.environ.get("PHYSICIST_OPENAI_API_KEY") or None,
         # The openai SDK falls back to the OPENAI_BASE_URL env var when base_url=None is passed
         # explicitly, which here points at the local vLLM server -- so an unset override must
