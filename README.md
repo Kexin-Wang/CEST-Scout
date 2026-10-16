@@ -48,7 +48,7 @@ vllm serve deepseek-ai/DeepSeek-V4-Flash --served-model-name deepseek-v4-flash -
   --trust-remote-code --kv-cache-dtype fp8_ds_mla
 ```
 
-DeepSeek-V4-Flash needs Hopper GPUs (its DeepGEMM kernels fail on Ada/L40S) and the
+DeepSeek-V4-Flash needs Hopper GPUs and the
 `fp8_ds_mla` KV cache. On shared nodes, `NCCL_RAS_ENABLE=0` avoids an NCCL start-up failure when
 another job holds NCCL's port. `hpc/` holds the SLURM scripts that served these models and ran
 the batch rounds (`hpc/README.md`); they are written for one cluster and need their paths and
@@ -60,7 +60,7 @@ and the clinical-evidence stage; the deterministic sweeps take a few minutes wit
 
 ## Outputs in this repository
 
-`outputs/` holds the nine-replicate round of 2026-10-13: seven tissues (myocardium, intervertebral
+`outputs/` holds the nine-replicate round: seven tissues (myocardium, intervertebral
 disc, breast, liver, pancreas, brain, skeletal muscle) x three models x nine replicates = 189
 self-contained HTML reports (`<tissue>_<model>_<timestamp>.html`), plus one `compare_<tissue>.html`
 page per tissue (27 runs each); start with the comparison pages. New runs are written to the same
@@ -99,13 +99,14 @@ tracked.
   table (model, endpoint, tokens, tool calls, retries, completeness checks, deterministic settings).
 
 ## Pipeline
+[Fig1.pdf](https://github.com/user-attachments/files/33565207/Fig1.pdf)
 
 1. **Literature agent** — PubMed search for metabolites > 1 mM in the tissue, with species,
    subject count and setting per citation; concentrations grounded in HMDB/BioNumbers indexes.
 2. **Chemist agent** — structure (checked against PubChem and replaced when wrong), exchangeable
    proton groups, and the *class* of each group: amide, guanidinium, amine, hydroxyl, imidazole,
    thiol, phosphate, rnoe (aliphatic C-H relayed NOE, ~−3.5 ppm; glycogen ~−1 ppm), rnoe16
-   (−1.6 ppm pool). The class is the only model choice that selects physics.
+   (−1.6 ppm pool). 
 3. **Deterministic simulation** (`cest_scout/pipeline.py`) — for each group, the exchange rate
    (or effective rNOE transfer rate) and offset are looked up by class from
    `cest_scout/data/exchange_reference.json`: numbers quoted from PubMed abstracts (or, labelled
@@ -114,9 +115,8 @@ tracked.
    from every setting (an in-vivo paper usually states the offset it saturated at, not a resolved
    shift). Borrowed values (another tissue, species or a phantom) are labelled as such in every
    report; a class with no verified entry is "not simulated: unknown". Concentration from the
-   literature agent, B1/Tsat from a sweep (no SAR ceiling: the earlier cap was an assumption, not a
-   calculation, and was removed), water/MT parameters from
-   `cest_scout/data/tissue_reference.json` (abstract-verified, table value, or generic default).
+   literature agent, B1/Tsat from a sweep, water/MT parameters from
+   `cest_scout/data/tissue_reference.json` (abstract-verified, table value, or estimated by scaling law, all labeled as it is).
 4. **Physicist agent** — reviews the simulation (cannot change it): literature that probed the
    metabolite, class errors, in-vivo shift discrepancies, overlap and direct-saturation
    diagnostics, quantification method for the swept B1/Tsat.
@@ -125,15 +125,7 @@ tracked.
    train adds up, then simulates each pair with that ROI's tissue parameters.
 6. **Clinical-evidence agent** — for each pool, the diseases its CEST/NOE signal has been applied
    to, and the diseases in which the metabolite itself is shown to change by any method (MRS,
-   metabolomics, histology, mechanistic or animal work); per abstract: species, group sizes, group
-   means ± SD, direction, p value, with the verbatim sentence. The pipeline verifies every PMID and quote, discards any number not in
-   its quote, counts humans and animals, and pools the group difference (Hedges' g, random
-   effects, 95 % CI, I²) where at least three verified studies with complete statistics exist for
-   one pool and disease category. Statistics an abstract omits are read from the PubMed Central
-   open-access full text (one extraction call per study, quote and numbers verified against that
-   text, filled only where missing, marked "full text"; `CLINICAL_FULLTEXT=false` disables it;
-   `python -m cest_scout.clinical_fulltext <run.json>` upgrades a saved run). Reported as
-   "Potential clinical impact".
+   metabolomics, histology, mechanistic or animal work). 
 
 ## Command reference
 
@@ -166,29 +158,10 @@ on the current reference table with `python -m cest_scout.resimulate <run.json>`
 ## Limits
 
 - Only numbers quoted **verbatim** from a PubMed abstract, or from a PubMed Central open-access
-  full text (then labelled "from the full text, not the abstract"), enter the reference tables;
-  the report's Simulation-inputs table shows the chemist's own ppm estimate beside the reference
-  offset when they differ, marked "not used". No abstract states an
-  amine exchange rate, so amine groups are "unknown"; the rNOE transfer rate is a single
-  approximate phantom value (~5 s⁻¹, PMID 25996515) and the −1.6 ppm pool has an offset but no
-  rate; the amide and creatine rates are borrowed from brain and muscle. Extend the tables by
-  adding verified records (`cest_scout/skills/build_exchange_reference.py`), not by typing numbers.
+  full text (then labelled "from the full text, not the abstract"), enter the reference tables.
 - The simulation is a first-pass detectability estimate: water + semisolid MT + target + up to
   three background pools with generic solute T1/T2; the field-strength sweep is continuous-wave
   from equilibrium (an upper bound), the verification-scan predictions use the actual pulse
   train, readout and TR in steady state.
-- The semisolid MT pool is the tissue's own where the table has it (fraction, k_ex, T2b from qMT
-  abstracts: brain, liver, skeletal muscle, myocardium, breast fibroglandular tissue) and the
-  stated generic pool (0.05 of water, 30 s^-1, 10 us) where it does not (disc, pancreas), labelled
-  as such in the tissue-parameter table. Direct water saturation follows each tissue's own water
-  T1/T2. Each per-field Z-spectrum caption splits the drop at the offset into direct saturation,
-  MT + background pools, and the metabolite's own contrast.
-- Uncertainty corners are only as wide as their inputs; a class with one verified measurement
-  has an unknown rate spread, and the report says so.
-- Water T1/T2 at a field with no measurement are estimated by a power law in B0 (T1 rising with
-  field, T2 nearly flat; form from Bottomley 1984, PMID 6482839) using the tissue's own
-  multi-field data or the table-median exponent, and are labelled "estimated" in the tissue table.
-- Citation species/setting fields are model-extracted from MeSH hints, not checked against full
-  texts. Structure labels only mark groups whose wording matches a fixed set of SMARTS patterns.
 - Always needs human-in-the-loop, as these findings need to be tested in the real world. Next step could be generating Pulseq sequence and seamlessly implement to the scanner.
 
