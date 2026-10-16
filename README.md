@@ -60,10 +60,11 @@ and the clinical-evidence stage; the deterministic sweeps take a few minutes wit
 
 ## Outputs in this repository
 
-`outputs/round_20261013_x9/` holds the nine-replicate round of 2026-10-13: seven tissues
-(myocardium, intervertebral disc, breast, liver, pancreas, brain, skeletal muscle) x three models
-x nine replicates = 189 self-contained HTML reports, plus one `compare_<tissue>.html` page per
-tissue (27 runs each). The folder is 1.8 GB; to clone without it:
+`outputs/` holds the nine-replicate round of 2026-10-13: seven tissues (myocardium, intervertebral
+disc, breast, liver, pancreas, brain, skeletal muscle) x three models x nine replicates = 189
+self-contained HTML reports (`<tissue>_<model>_<timestamp>.html`), plus one `compare_<tissue>.html`
+page per tissue (27 runs each); start with the comparison pages. New runs are written to the same
+folder. It is 1.8 GB; to clone without it:
 
 ```bash
 git clone --filter=blob:none --sparse https://github.com/Kexin-Wang/CEST-Scout.git
