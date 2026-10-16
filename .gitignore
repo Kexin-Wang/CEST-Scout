@@ -1,0 +1,15 @@
+.env
+__pycache__/
+*.pyc
+outputs/*
+!outputs/.gitkeep
+!outputs/*.html
+!outputs/round_20261012/
+outputs/round_20261012/*
+!outputs/round_20261012/*.html
+.pytest_cache/
+*.egg-info/
+hpc/logs/
+!outputs/round_20261013_x9/
+outputs/round_20261013_x9/*
+!outputs/round_20261013_x9/*.html
