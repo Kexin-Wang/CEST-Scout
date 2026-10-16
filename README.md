@@ -1,4 +1,4 @@
-# CEST_Scout
+# CEST Scout
 
 Five LLM agents plus a deterministic physics stage that, for a body part or tissue (brain, liver,
 intervertebral disc, ...), propose which endogenous metabolites are realistic CEST (Chemical Exchange Saturation Transfer) MRI targets
@@ -23,7 +23,7 @@ served locally with vLLM, thinking disabled (`LLM_DISABLE_THINKING=true`); the s
 scripts in `hpc/` are written for one SLURM cluster and need their paths and module names
 adapted. PubMed and PubChem are queried live, so a run needs network access and an `NCBI_EMAIL`
 (an `NCBI_API_KEY` raises the rate limit). The Bloch-McConnell engine is vendored at
-`cest_scout/skills/bloch_mcconnell.py` (from [CEST_simulator](https://github.com/Kexin-Wang/CEST_simulator), MIT).
+`cest_scout/skills/bloch_mcconnell.py` (from [BMsim]([https://github.com/Kexin-Wang/CEST_simulator](https://github.com/Kexin-Wang/BMsim))).
 
 A run takes 10-25 min per tissue (one GPU-served model), most of it in the agents' PubMed searches
 and the clinical-evidence stage; the deterministic sweeps take a few minutes with
