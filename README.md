@@ -5,6 +5,8 @@ intervertebral disc, ...), propose which endogenous metabolites are realistic CE
 there and design an in vivo scan to check them. Every physical number in the simulation comes
 from a cited reference table or a sweep, never from hallucination. If there are lots of relevant clinical papers, add the meta-analysis for the relative disease as well.
 
+**Example report:** [brain, DeepSeek-V4-Flash](example/), readable directly on GitHub (verdicts, simulation inputs with their sources, Z-spectra, clinical evidence, verification scan).
+
 ## Quick start
 
 ```bash
@@ -70,6 +72,10 @@ folder. It is 1.8 GB; to clone without it:
 git clone --filter=blob:none --sparse https://github.com/Kexin-Wang/CEST-Scout.git
 cd CEST-Scout && git sparse-checkout set --no-cone '/*' '!outputs'
 ```
+
+GitHub shows `.html` files as source code, so open a report after downloading it (each file is
+self-contained), or read [`example/`](example/): the brain report of `outputs/brain_deepseek_v4_flash_20261014T044224Z.html`
+as Markdown with its 114 figures.
 
 The pipeline's own `.gitignore` keeps run JSON/Markdown files out of git; only HTML reports are
 tracked.
