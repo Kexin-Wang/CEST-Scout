@@ -1,11 +1,17 @@
 # CEST Scout
 
-Five LLM agents plus a deterministic physics stage that, for a body part or tissue (brain, liver,
-intervertebral disc, ...), propose which endogenous metabolites are realistic CEST (Chemical Exchange Saturation Transfer) MRI targets
-there and design an in vivo scan to check them. Every physical number in the simulation comes
-from a cited reference table or a sweep, never from hallucination. If there are lots of relevant clinical papers, add the meta-analysis for the relative disease as well.
+**CEST Scout** is an in-house, agent-based platform designed to streamline the translation of **chemical exchange saturation transfer (CEST)** MRI to new tissues and organs. While CEST is a powerful, noninvasive metabolite imaging technique, adapting it to a new application typically requires extensive literature review, sequence optimization, simulation, and experimental planning.
 
-**Example report:** [brain, DeepSeek-V4-Flash](example/), readable directly on GitHub (verdicts, simulation inputs with their sources, Z-spectra, clinical evidence, verification scan).
+To address this bottleneck, CEST Scout uses **five specialized large language model agents** to:
+
+- identify potentially detectable metabolites from literature- and textbook-based sources,
+- evaluate their detectability using **Bloch–McConnell simulations**,
+- suggest promising clinical applications, and
+- propose validation experiments with detailed sequence designs.
+
+By combining domain-specific AI agents with physics-based simulation, CEST Scout aims to provide a more structured, transparent, and efficient workflow for CEST study design and exploration.
+
+**Example report:** [brain, DeepSeek-V4-Flash](example/), readable directly on GitHub.
 
 ## Quick start
 
