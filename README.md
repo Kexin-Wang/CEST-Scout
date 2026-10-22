@@ -126,9 +126,7 @@ tracked.
    same-tissue and in-vivo measurements; the offset is the median of the metabolite's own values
    from every setting (an in-vivo paper usually states the offset it saturated at, not a resolved
    shift). Borrowed values (another tissue, species or a phantom) are labelled as such in every
-   report; a class with no verified entry is "not simulated: unknown". Concentration from the
-   literature agent, B1/Tsat from a sweep, water/MT parameters from
-   `cest_scout/data/tissue_reference.json` (abstract-verified, table value, or estimated by scaling law, all labeled as it is).
+   report; a class with no verified entry is "not simulated: unknown". 
 4. **Physicist agent** — reviews the simulation (cannot change it): literature that probed the
    metabolite, class errors, in-vivo shift discrepancies, overlap and direct-saturation
    diagnostics, quantification method for the swept B1/Tsat.
@@ -166,14 +164,3 @@ checks, per-candidate verdicts and contrasts, within-model replicate spread, a c
 table, a coloured pairwise-agreement heatmap (candidate Jaccard and verdict agreement), the tissue
 parameters each run used, and every simulation input with its source. Old runs can be re-simulated
 on the current reference table with `python -m cest_scout.resimulate <run.json>`.
-
-## Limits
-
-- Only numbers quoted **verbatim** from a PubMed abstract, or from a PubMed Central open-access
-  full text (then labelled "from the full text, not the abstract"), enter the reference tables.
-- The simulation is a first-pass detectability estimate: water + semisolid MT + target + up to
-  three background pools with generic solute T1/T2; the field-strength sweep is continuous-wave
-  from equilibrium (an upper bound), the verification-scan predictions use the actual pulse
-  train, readout and TR in steady state.
-- Always needs human-in-the-loop, as these findings need to be tested in the real world. Next step could be generating Pulseq sequence and seamlessly implement to the scanner.
-
