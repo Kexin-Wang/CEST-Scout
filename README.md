@@ -56,15 +56,8 @@ vllm serve deepseek-ai/DeepSeek-V4-Flash --served-model-name deepseek-v4-flash -
   --trust-remote-code --kv-cache-dtype fp8_ds_mla
 ```
 
-DeepSeek-V4-Flash needs Hopper GPUs and the
-`fp8_ds_mla` KV cache. On shared nodes, `NCCL_RAS_ENABLE=0` avoids an NCCL start-up failure when
-another job holds NCCL's port. `hpc/` holds the SLURM scripts that served these models and ran
-the batch rounds (`hpc/README.md`); they are written for one cluster and need their paths and
-module names adapted.
-
 A run takes 10-25 min per tissue (one GPU-served model), most of it in the agents' PubMed searches
-and the clinical-evidence stage; the deterministic sweeps take a few minutes with
-`OMP_NUM_THREADS=4` (unbounded BLAS threads on a shared node can make them 50x slower).
+and the clinical-evidence stage; the deterministic sweeps take a few minutes with.
 
 ## Outputs in this repository
 
@@ -101,9 +94,7 @@ tracked.
 - a robustness grade against the concentration range and the reference-rate spread;
 - the physicist's critique and the supporting literature, every PMID verified against PubMed;
 - **potential clinical impact**: the diseases this pool's CEST/NOE signal has been applied to and
-  those in which the metabolite is shown to change by any method, one verified study per row (species, n, group means ± SD, direction, p value, PMID with the quote),
-  counts of human and animal studies and subjects, and a pooled group difference (Hedges' g with
-  95 % CI and I²) where three or more verified studies with complete statistics exist;
+  those in which the metabolite is shown to change by any method, one verified study per row;
 - an ROI-differential verification scan designed for the tissue (plane, slice, ROIs including the
   target tissue, one compromise pulse train), simulated as written, with predicted per-ROI contrast
   and its range over ±30 % B1;
